@@ -1,10 +1,11 @@
-from app.api.routes import router as api_router  # 追加
+from app.api.routes import router as api_router
+from app.core import config, tasks  # 追加
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 
 def get_application():
-    app = FastAPI(title="Hedgehog Reservation", version="1.0.0")
+    app = FastAPI(title=config.PROJECT_NAME, version=config.VERSION) # 変更
 
     app.add_middleware(
         CORSMiddleware,
@@ -14,7 +15,10 @@ def get_application():
         allow_headers=["*"],
     )
 
-    app.include_router(api_router, prefix="/api") # 追加
+    app.add_event_handler("startup", tasks.create_start_app_handler(app)) # 起動
+    app.add_event_handler("shutdown", tasks.create_stop_app_handler(app)) # シャットダウン
+
+    app.include_router(api_router, prefix="/api")
 
     return app
 
